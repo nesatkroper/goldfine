@@ -32,7 +32,6 @@ user.secrets
 # --- Databases ---
 /*.sqlite
 /*.sqlite-journal
-/*.sql
 
 # --- Testing & Tools ---
 .phpunit.result.cache
