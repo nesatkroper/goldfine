@@ -1,7 +1,7 @@
 # Makefile for Laravel Docker setup
 
-CONTAINER_NAME=cleartoo-app
-DB_CONTAINER=cleartoo-db
+CONTAINER_NAME=goldfine-app
+DB_CONTAINER=goldfine-db
 DB_ROOT_PASS=Aa32c2PFMzcwDd2r
 
 # Auto-detect compose command (V2 plugin vs V1 standalone)
@@ -44,13 +44,13 @@ build: ## Build the containers
 	$(DOCKER_COMPOSE) up -d --build
 
 install: build wait-db composer-install ## Full setup: build, wait for DB, then install composer (use make db-restore manually once)
-	docker exec cleartoo-app mkdir -p /var/www/resources/views /var/www/storage/framework/cache/data /var/www/storage/framework/sessions /var/www/storage/framework/views /var/www/storage/logs
-	docker exec cleartoo-app chown -R www-data:www-data /var/www
-	docker exec cleartoo-app chmod -R 777 /var/www/storage /var/www/bootstrap/cache
-	docker exec cleartoo-app rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/packages.php bootstrap/cache/services.php
-	docker exec cleartoo-app php artisan storage:link --force 2>/dev/null || true
-	docker exec cleartoo-app php artisan optimize:clear
-	@echo "Setup complete! Navigate to http://cleartoo.site"
+	docker exec goldfine-app mkdir -p /var/www/resources/views /var/www/storage/framework/cache/data /var/www/storage/framework/sessions /var/www/storage/framework/views /var/www/storage/logs
+	docker exec goldfine-app chown -R www-data:www-data /var/www
+	docker exec goldfine-app chmod -R 777 /var/www/storage /var/www/bootstrap/cache
+	docker exec goldfine-app rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/packages.php bootstrap/cache/services.php
+	docker exec goldfine-app php artisan storage:link --force 2>/dev/null || true
+	docker exec goldfine-app php artisan optimize:clear
+	@echo "Setup complete! Navigate to http://goldfine.cleartoo.site"
 
 
 upd: ## Fast update: clear cache and fix permissions (for small code changes)
@@ -75,14 +75,14 @@ wait-db: ## Wait for MySQL to be ready (uses healthcheck)
 	done
 	@echo "MySQL is ready!"
 
-db-restore: ## Restore the database from bvcheadcenter_db.sql
-	@echo "Restoring database from bvcheadcenter_db.sql..."
-	docker exec -i $(DB_CONTAINER) mysql -uroot -p$(DB_ROOT_PASS) cleartoo < bvcheadcenter_db.sql
+db-restore: ## Restore the database from amulet_db_backup.sql
+	@echo "Restoring database from amulet_db_backup.sql..."
+	docker exec -i $(DB_CONTAINER) mysql -uroot -p$(DB_ROOT_PASS) amulet_db < amulet_db_backup.sql
 	@echo "Database restoration complete!"
 
 db-backup: ## Create a backup of the live database
 	@echo "Backing up database..."
-	docker exec $(DB_CONTAINER) mysqldump -uroot -p$(DB_ROOT_PASS) cleartoo > backup_$(shell date +%Y_%m_%d_%H%M%S).sql
+	docker exec $(DB_CONTAINER) mysqldump -uroot -p$(DB_ROOT_PASS) amulet_db > backup_$(shell date +%Y_%m_%d_%H%M%S).sql
 	@echo "Backup saved as backup_$(shell date +%Y_%m_%d_%H%M%S).sql"
 
 composer-install: ## Run composer install (production: no-dev + optimized autoloader)
@@ -96,14 +96,14 @@ bash: ## Access the app container bash
 
 db-fix-slugs: ## Repair missing shop names and slugs in the database
 	@echo "Repairing missing shop names and slugs..."
-	docker exec $(DB_CONTAINER) mysql -uroot -p$(DB_ROOT_PASS) cleartoo -e "UPDATE shops SET name = 'Shop' WHERE name IS NULL; UPDATE shops SET slug = CONCAT('shop-', id) WHERE slug IS NULL OR slug = '';"
+	docker exec $(DB_CONTAINER) mysql -uroot -p$(DB_ROOT_PASS) amulet_db -e "UPDATE shops SET name = 'Shop' WHERE name IS NULL; UPDATE shops SET slug = CONCAT('shop-', id) WHERE slug IS NULL OR slug = '';"
 	@echo "Repair complete!"
 
 db-bash: ## Access the database container bash
 	docker exec -it $(DB_CONTAINER) bash
 
 db-sql: ## Access the MySQL prompt directly (as root)
-	docker exec -it $(DB_CONTAINER) mysql -u root -p$(DB_ROOT_PASS) cleartoo
+	docker exec -it $(DB_CONTAINER) mysql -u root -p$(DB_ROOT_PASS) amulet_db
 
 logs: ## Show container logs
 	$(DOCKER_COMPOSE) logs -f
